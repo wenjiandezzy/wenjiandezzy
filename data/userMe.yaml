@@ -1,0 +1,24 @@
+- baseInfo:
+    api_name: 获取当前登录用户（已认证）
+    url: /user/me
+    method: get
+    # get_token_header() 会从 extract.yaml 读取 accessToken，拼成 Bearer 认证头
+    header: ${get_token_header()}
+  testCase:
+    - case_name: 携带 token 查询当前登录用户
+      validation:
+        - code: 200
+        - eq: {'id': 1, 'username': 'emilys'}
+        - contain: {'email': 'emily.johnson@x.dummyjson.com'}
+
+- baseInfo:
+    api_name: 获取当前登录用户（未认证）
+    url: /user/me
+    method: get
+    header:
+      Content-Type: application/json; charset=utf-8
+  testCase:
+    - case_name: 不携带 token 应返回 401
+      validation:
+        - code: 401
+        - contain: {'message': 'Access Token is required'}

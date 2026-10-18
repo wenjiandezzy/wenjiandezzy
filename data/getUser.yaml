@@ -1,0 +1,13 @@
+- baseInfo:
+    api_name: 获取单个用户
+    # 复用上一个用例提取的 userIds 列表，取第 1 个元素拼进 url
+    url: /users/${get_extract_data(userIds, 1)}
+    method: get
+    header:
+      Content-Type: application/json; charset=utf-8
+  testCase:
+    - case_name: 查询列表中第一个用户的详情
+      validation:
+        - code: 200
+        - eq: {'id': 1, 'username': 'emilys'}
+        - contain: {'email': 'emily.johnson@x.dummyjson.com'}

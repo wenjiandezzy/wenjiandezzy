@@ -1,12 +1,18 @@
 - baseInfo:
-    api_name: 登录获取 Token
-    url: https://dummyjson.com/auth/login
+    api_name: 新增用户
+    url: /users/add
     method: post
     header:
       Content-Type: application/json; charset=utf-8
   testCase:
-    - case_name: 用户登录
-      data:
-        username: ${get_extract_data(usernames, 0)}
-        password: ${get_extract_data(username)}
-        expiresInMins: 60
+    - case_name: 新增用户成功
+      # 用 json 传参，Content-Type 必须与之一致；用 data 会被编码成 form-urlencoded
+      json:
+        firstName: 自动化
+        lastName: 测试
+        age: 18
+      validation:
+        - code: 201
+        - eq: {'firstName': '自动化', 'lastName': '测试', 'age': 18}
+      extract:
+        newUserId: $.id

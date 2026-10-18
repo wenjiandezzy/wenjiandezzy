@@ -1,0 +1,35 @@
+# ---------- Python ----------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+build/
+dist/
+
+# ---------- 虚拟环境 ----------
+.venv/
+venv/
+env/
+
+# ---------- 测试产物 ----------
+report/
+temps/
+allure-results/
+.pytest_cache/
+*.log
+
+# 运行时提取的变量（含 token 等敏感信息），不进版本库
+extract.yaml
+
+# ---------- IDE / 系统 ----------
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ---------- 工具目录 ----------
+.workbuddy-ai/
+
+# ---------- 本地文档（不随项目发布）----------
+代码审查报告.md

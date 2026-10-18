@@ -1,10 +1,9 @@
 name: zzy
 age: 18
 hobby:
-  听歌
-  游戏
-  做饭
+  - 听歌
+  - 游戏
+  - 做饭
 address:
   country: 中国
   city: 苏州
-  

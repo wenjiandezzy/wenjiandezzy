@@ -1,18 +1,32 @@
 - baseInfo:
     api_name: 登录获取 Token
-    url: https://dummyjson.com/auth/login
+    # url 写相对路径，host 由 configs/config.ini 的 [Host] 提供，方便切换环境
+    url: /auth/login
     method: post
-    header: ${get_header(json)}
-    cookies:
-      ${get_extract_data(Cookie)}
+    header:
+      Content-Type: application/json; charset=utf-8
   testCase:
-    - case_name: 用户登录
+    - case_name: 正确账号密码登录成功
       json:
         username: emilys
         password: emilyspass
         expiresInMins: 60
       validation:
-        - contain: {'msg':'${get_extract_data(login_status)}'}
-        - eq: {'msg':'登陆成功'}
+        - code: 200
+        - eq: {'id': 1, 'username': 'emilys'}
+        - ne: {'accessToken': ''}
+        - contain: {'email': 'emily.johnson@x.dummyjson.com'}
       extract:
-        token: $.token
+        accessToken: $.accessToken
+        refreshToken: $.refreshToken
+        username: $.username
+        userId: $.id
+
+    - case_name: 密码错误登录失败
+      json:
+        username: emilys
+        password: wrong_password
+        expiresInMins: 60
+      validation:
+        - code: 400
+        - contain: {'message': 'Invalid credentials'}

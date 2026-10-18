@@ -1,0 +1,18 @@
+- baseInfo:
+    api_name: 获取用户列表
+    url: /users
+    method: get
+    header:
+      Content-Type: application/json; charset=utf-8
+  testCase:
+    - case_name: 分页获取前 3 个用户
+      params:
+        limit: 3
+        skip: 0
+      validation:
+        - code: 200
+        - eq: {'limit': 3, 'skip': 0}
+        - contain: {'username': 'emilys'}
+      # extract_list 提取列表，后续用例可以用 ${get_extract_data(userIds, 1)} 取第 1 个
+      extract_list:
+        userIds: $.users[*].id

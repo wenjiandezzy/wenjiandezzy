@@ -1,118 +1,59 @@
-import re
-from http.client import responses
-from unit_tools.handle_data.yaml_handle import read_yaml, write_yaml
 import requests
-from requests import utils
+
 
 class SendRequest:
+    """
+    接口请求封装
+    统一收口超时、证书校验、cookie 提取等公共逻辑，用例层不用关心 requests 的细节。
+    """
 
-    def __init__(self):
-        pass
+    def __init__(self, timeout=10, verify=True):
+        # 复用 Session：同一个实例内会自动带上服务端下发的 cookie
+        self.session = requests.Session()
+        self.timeout = timeout
+        self.verify = verify
 
-    @classmethod
-    def _text_encode(cls, res_text):
-        """
-        处理接口返回值出现uncode编码时，如：\\u767b
-        :param res_text:
-        :return:
-        """
-        match = re.search(r"\\u[0-9a-fA-F]{4}", res_text)
-        if match:
-            result = res_text.encode().decode('unicode-escape')
-        else:
-            result = res_text
-        return result
-
-
-    def send_request(self, **kwargs):
-        #创建一个会话
-        session = requests.Session()
-        response = None
-        try:
-            response = session.request(**kwargs)
-            set_cookie = requests.utils.dict_from_cookiejar(response.cookies)
-            if set_cookie:
-                # print(f'获取到cookie：{set_cookie}')
-                write_yaml({'获取到cookie': set_cookie})
-            res = self._text_encode(response.text)
-            # print(res)
-        except requests.exceptions.ConnectionError:
-            print('接口请求异常，可能是request的连接数过多或者速度过快导致程序报错。')
-        except requests.exceptions.RequestException as e:
-            print(f'请求异常，请检查系统或数据是否正常,原因：{e}')
-
-        return response
-
-    def execute_api_request(self, api_name, url, method, header, case_name, cookie=None, file=None, **kwargs):
+    def execute_api_request(self, api_name, url, method, header, case_name,
+                            cookie=None, file=None, **kwargs):
         """
         发起接口请求
-        :param api_name: 接口名称
+        :param api_name: 接口名称（仅用于日志和报告展示）
         :param url: 接口地址
-        :param method: 请求方法
+        :param method: 请求方法，get / post / put / delete ...
         :param header: 请求头
-        :param case_name: 测试用例名称
-        :param cookie: cookie
-        :param file: 文件上传
-        :param kwargs: 未知数量的关键字参数
-        :return:
+        :param case_name: 测试用例名称（仅用于日志和报告展示）
+        :param cookie: cookie，字典格式
+        :param file: 文件上传，requests 的 files 参数
+        :param kwargs: 其他请求参数，如 json / data / params / timeout / verify
+        :return: requests.Response 对象；请求异常时返回 None
         """
-        # 从 kwargs 中取出 timeout，如果没有则使用默认值 10
-        timeout = kwargs.pop('timeout', 10)
-        # 从 kwargs 中取出 verify，如果没有则使用默认值 False
-        verify = kwargs.pop('verify', False)
+        # 允许单条用例覆盖全局的超时和证书校验设置
+        timeout = kwargs.pop('timeout', self.timeout)
+        verify = kwargs.pop('verify', self.verify)
 
-        resp = requests.request(method=method,
-                                url=url,
-                                headers=header,
-                                cookies=cookie,
-                                files=file,
-                                timeout=timeout,
-                                verify=verify,
-                                **kwargs)
+        print(f'[请求] {method.upper()} {url}')
+        print(f'[请求] header={header}')
+        print(f'[请求] params={kwargs}')
 
-        #添加写入 Cookie 的逻辑
-        # set_cookie = requests.utils.dict_from_cookiejar(resp.cookies)
-        # if set_cookie:
-        #     write_yaml({'获取到cookie': set_cookie},mode='w')
+        try:
+            response = self.session.request(
+                method=method,
+                url=url,
+                headers=header,
+                cookies=cookie,
+                files=file,
+                timeout=timeout,
+                verify=verify,
+                **kwargs
+            )
+        except requests.exceptions.ConnectionError:
+            print(f'[请求异常] {api_name} / {case_name}：连接失败，请检查网络或服务是否启动')
+            return None
+        except requests.exceptions.Timeout:
+            print(f'[请求异常] {api_name} / {case_name}：请求超时（{timeout}s）')
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f'[请求异常] {api_name} / {case_name}：{e}')
+            return None
 
-        return resp
-
-if __name__ == '__main__':
-    from unit_tools.handle_data import configParser
-    import requests
-
-    # url_login = 'url'
-    # header_login = 'header'
-    # data_login = {
-    #     'username': 'username',
-    #     'password': 'password',
-    # }
-    # url = 'http://127.0.0.1:8787' + data['baseInfo']['url']
-
-    data = read_yaml('../../test_project/data/login.yaml')[0]
-    url = data['baseInfo']['url']
-    method = data['baseInfo']['method']
-    header = data['baseInfo']['header']
-    req_data = data['testCase'][0]['data']
-    send = SendRequest()
-    res = send.execute_api_request(api_name=None, url=url, method=method, header=header, case_name=None,
-                                   json=req_data)
-
-    if res.status_code == 200:
-        res_json = res.json()
-
-        # 构建提取出来的变量字典
-        extract_data = {
-            'accessToken': res_json.get('accessToken'),
-            'user_id': res_json.get('id'),
-            'username': res_json.get('username'),
-            # 模拟一个列表变量，供后续随机取值测试
-            'usernames': ['emilys', 'michaelw', 'sophiab']
-        }
-
-        # 写入 extract.yaml (使用 mode='w' 覆盖，保持文件干净)
-        write_yaml(extract_data, mode='w')
-
-        print('已成功提取变量并写入extract.yaml：')
-    else:
-        print(f'请求失败，状态码：{res.status_code}')
+        return response
