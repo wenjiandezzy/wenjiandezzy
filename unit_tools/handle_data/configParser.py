@@ -13,7 +13,9 @@ class Configparser:
         self.read_config()
 
     def read_config(self):
-        self.config.read(self.file_path)
+        # 必须显式指定 utf-8：config.ini 里有中文注释，
+        # 不指定时 configparser 会用系统默认编码（中文 Windows 是 GBK）导致 UnicodeDecodeError
+        self.config.read(self.file_path, encoding='utf-8')
 
     def get_value(self, section, option):
         """
