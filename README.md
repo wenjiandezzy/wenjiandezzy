@@ -26,7 +26,8 @@ test_project/
 │   ├── getUser.yaml        # 用户详情（复用列表提取的 id）
 │   └── userMe.yaml         # 当前登录用户（带 token / 不带 token）
 ├── docs/
-│   └── dummyjson-openapi.yaml   # 被测服务的 OpenAPI 文档
+│   ├── dummyjson-official-openapi.json   # 官方 OpenAPI 规范（68 个接口，权威来源）
+│   └── dummyjson-openapi.yaml            # 精简版（仅本项目涉及的 15 个接口）
 ├── testcase/
 │   ├── conftest.py         # 全局 fixture
 │   ├── login/
@@ -124,6 +125,25 @@ YAML 中可以用 `${函数名(参数)}` 调用 `unit_tools/debugtalk.py` 里的
 
 `configs/config.ini` 中的 `[Host] host` 决定被测服务地址。YAML 里的 `url` 写相对路径，
 切换测试环境时只需改这一行，无需修改任何用例数据。
+
+## 接口文档
+
+`docs/` 下有两份，用途不同：
+
+| 文件 | 内容 | 来源 |
+|---|---|---|
+| `dummyjson-official-openapi.json` | 完整规范，68 个接口 | DummyJSON 官方 `https://dummyjson.com/openapi.json`，原样保存 |
+| `dummyjson-openapi.yaml` | 精简版，仅本项目涉及的 15 个接口 | 手工整理，便于快速查阅 |
+
+写新用例时以官方 JSON 为准。它涵盖的资源比精简版多得多，除 users / products / carts 外还有
+posts、comments、todos、quotes、recipes、auth、webhook 等，且每个接口都带完整的
+请求体与响应 Schema。
+
+在线可读版：<https://dummyjson.com/docs>
+
+> 注：DummyJSON 是模拟接口，所有写操作（POST / PUT / PATCH / DELETE）只返回一个「看起来成功」
+> 的对象，不会真正落库。例如 `POST /users/add` 返回 `id: 209`，但 `GET /users/209` 是 404，
+> 用户总数仍是 208。因此这类用例只能验证请求格式与响应结构，无法验证数据持久化。
 
 ## 说明
 
